@@ -69,7 +69,8 @@ if True:
     3: [EXTRAAPPLE,SHORTEN,REVERSE,EXTRABORDER,LENGTHEN,EXTRAKILLER],
     4: [EXTRAAPPLE,REVERSE,REVERSE,EXTRABORDER,LENGTHEN,EXTRAKILLER],
     }[difficulty]
-    speedlevel=0# float(raw_input("How fast does the snake crawl? \n"))
+    ZEROSPEED=35
+    speedlevel=s#15# float(raw_input("How fast does the snake crawl? \n"))
 
     lose=False
     pause = False
@@ -88,6 +89,7 @@ if True: # pygame init
     textGO = fontPause.render("GAME OVER!", 1, colorText)
     textPause = fontPause.render("Paused...", 1, colorText)
     textScore = fontRules.render("Score : ",1,colorText)
+    textSpeed = fontRules.render("Speed : ",1,colorText)
     Rules = ["Controls:",
         "q / e : left/right ",
         "a / d : left/right x2 ",
@@ -201,22 +203,15 @@ class Snake:
         for i in range(s-1): 
             for j in range(s+i): ds(i,j)
             for j in range(i+1,n): ds(i+s,j)
-        for i in range(len(Rules)):
-            screen.blit(textRules[i], (0, 15*i))
-        screen.blit(textScore, (display_width-100, 5))
-        screen.blit(fontPause.render(str(snake.score),1,colorText),(display_width-90, 20))
 
     def next(self,x,y,d):
         rx, ry= further(x,y,d)
         if self.out(rx,ry):
-            if loop:
-                while (not self.out(x,y) ) :
-                    x,y= further(x,y,(d+3)%6)
-                rx, ry= further(x,y,d)
-            else:
-                n=self.field_dimension-1
-                self.field[0][n]=KILLER        
-                return 0,n
+            while (not self.out(x,y) ) :
+                x,y= further(x,y,(d+3)%6)
+            rx, ry= further(x,y,d)
+            if not loop:
+                self.field[rx][ry]=KILLER
         return rx,ry
 
     def crawl(self):
@@ -233,12 +228,12 @@ class Snake:
 
     def eat(self,x,y):
         a=self.field[x][y]
-        self.field[x][y]=-3
-        if a < 0 :
+        if a in [BODY,HEAD,TAIL,KILLER,BORDER] :
             # snake=[]
+            self.field[x][y]=EMPTY
             return True
-        if a == EMPTY :
-            return False
+        else :
+            self.field[x][y]=-3
         if a == APPLE : 
             self.field[x][y]=-2
             self.score+=1
@@ -277,6 +272,19 @@ class Snake:
             self.cdir=dir(x,y,i,j)
             self.field[x][y]=-3
         return False
+        
+def drawtext():    
+    for i in range(len(Rules)):
+        screen.blit(textRules[i], (0, 15*i))
+    screen.blit(textScore, (display_width-100, 5))
+    screen.blit(fontPause.render(str(snake.score),1,colorText),(display_width-90, 20))
+    screen.blit(textSpeed, (display_width-100, display_height-65))
+    screen.blit(fontPause.render(str(speedlevel),1,colorText),(display_width-90, display_height-50))
+    if pause: 
+        screen.blit(textPause, (display_width/2-100,display_height/2))    
+    if lose:
+        screen.blit(textGO, (display_width/2-100,display_height/2-40))       
+    
            
 snake = Snake(s,s,2,1)
 snake.initfield(s)
@@ -286,9 +294,9 @@ snake.setobj(1,APPLE)
 while True: # Game loop
     if not pause and not lose: lose = snake.crawl()
     snake.drawfield()
-    if pause: screen.blit(textPause, (display_width/2-100,display_height/2))    
-    if lose: screen.blit(textGO, (display_width/2-100,display_height/2-40))    
-    pygame.time.wait(int(1.3**(20-speedlevel))) 
+    drawtext()
+    pygame.display.update()
+    pygame.time.wait(int(1.25**(ZEROSPEED-speedlevel))) 
     for event in pygame.event.get():
         if event.type == QUIT :
             pygame.quit()
@@ -306,5 +314,7 @@ while True: # Game loop
                 snake.cdir%=6
             if event.key in [K_w,K_s]:
                 speedlevel +={K_w:1,K_s:-1}[event.key]
-    pygame.display.update()
+                if speedlevel<1:
+                    speedlevel=1
+                    pause= not pause
 
